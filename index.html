@@ -15,6 +15,15 @@
   .card .game { font-size:11px; margin-bottom:10px; }
   .card p { font-size:13px; line-height:1.8; color:#bcc8de; margin:0 0 12px; }
   .card ul { font-size:12.5px; line-height:1.9; color:#bcc8de; margin:0 0 14px; padding-left:20px; }
+  details.desc { margin:0 0 14px; }
+  details.desc summary { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:bold; color:#64b5f6; cursor:pointer; user-select:none; padding:5px 14px; border:1px solid #33455e; border-radius:16px; background:#1b2130; list-style:none; }
+  details.desc summary::-webkit-details-marker { display:none; }
+  details.desc summary::before { content:"▸"; font-size:11px; transition: transform .15s; }
+  details.desc[open] summary::before { transform: rotate(90deg); }
+  details.desc[open] { border:1px solid #33455e; border-radius:10px; background:#212a3d; padding:12px 14px; }
+  details.desc[open] summary { margin-bottom:10px; }
+  details.desc p { margin:0 0 8px; }
+  details.desc ul { font-size:12.5px; line-height:1.9; color:#bcc8de; margin:0; padding-left:20px; }
   .badge { display:inline-block; font-size:11px; font-weight:bold; padding:2px 10px; border-radius:20px; margin-right:6px; }
   .b-ngs { background:#0e3a33; color:#5eead4; border:1px solid #14b8a6; }
   .b-psp2 { background:#3a2a0e; color:#ffb86b; border:1px solid #f59e0b; }
@@ -41,14 +50,17 @@
   <div class="card">
     <h2>NGS アバンダク計算ツール</h2>
     <div class="game"><span class="badge b-ngs">NGS</span><span class="badge b-live">公開中</span></div>
-    <p>武器1＋防具3 × 各8スロットに付与する特殊能力を組み立てながら、<b>重複を除いた総特殊能力数</b>をリアルタイムで集計する計算ツール。</p>
-    <ul>
-      <li>EXOP1〜3 の一括設定・解除、全複製、クリア</li>
-      <li>スキルリング・アミュレット (AM能力 OP枠)・数値合算にも対応</li>
-      <li>カスタム能力の追加・JSON バックアップ、選択状態の自動保存</li>
-      <li>ダーク / ライト / サイバー / ミント のテーマ切り替え</li>
-      <li>単一 HTML で動作・ブラウザ完結・通信なし</li>
-    </ul>
+    <details class="desc" id="d-avandak">
+      <summary>詳細</summary>
+      <p>武器1＋防具3 × 各8スロットに付与する特殊能力を組み立てながら、<b>重複を除いた総特殊能力数</b>をリアルタイムで集計する計算ツール。</p>
+      <ul>
+        <li>EXOP1〜3 の一括設定・解除、全複製、クリア</li>
+        <li>スキルリング・アミュレット (AM能力 OP枠)・数値合算にも対応</li>
+        <li>カスタム能力の追加・JSON バックアップ、選択状態の自動保存</li>
+        <li>ダーク / ライト / サイバー / ミント のテーマ切り替え</li>
+        <li>単一 HTML で動作・ブラウザ完結・通信なし</li>
+      </ul>
+    </details>
     <div class="btns">
       <a class="btn primary" href="https://u2magu.github.io/ngs-calc/" target="_blank">開く (公開版)</a>
       <a class="btn gh" href="https://github.com/u2magu/ngs-calc" target="_blank">GitHub</a>
@@ -60,14 +72,17 @@
   <div class="card">
     <h2>NGS 情報ダッシュボード (GAS版)</h2>
     <div class="game"><span class="badge b-ngs">NGS</span><span class="badge b-live">公開中 (v33)</span></div>
-    <p>公式サイトの<b>イベントスケジュール</b>と<b>最新ニュース</b>を1ページにまとめて表示する Google Apps Script 製ダッシュボード。スマホのホーム画面にも追加できます。</p>
-    <ul>
-      <li>予告緊急クエストは公式スケジュールのリンクから自動追従で取得</li>
-      <li>⚡ 電撃オンライン NGS特集の最新記事3件も表示</li>
-      <li>60分キャッシュ＋深夜帯は更新停止 (公式にやさしい設計)</li>
-      <li>セクション折りたたみ・「緊急は次の2つだけ表示」などの開閉設定を localStorage に保存</li>
-      <li>noindex・(C)SEGA 表記つきの非公式ファンツール</li>
-    </ul>
+    <details class="desc" id="d-dash">
+      <summary>詳細</summary>
+      <p>公式サイトの<b>イベントスケジュール</b>と<b>最新ニュース</b>を1ページにまとめて表示する Google Apps Script 製ダッシュボード。スマホのホーム画面にも追加できます。</p>
+      <ul>
+        <li>予告緊急クエストは公式スケジュールのリンクから自動追従で取得</li>
+        <li>⚡ 電撃オンライン NGS特集の最新記事3件も表示</li>
+        <li>60分キャッシュ＋深夜帯は更新停止 (公式にやさしい設計)</li>
+        <li>セクション折りたたみ・「緊急は次の2つだけ表示」などの開閉設定を localStorage に保存</li>
+        <li>noindex・(C)SEGA 表記つきの非公式ファンツール</li>
+      </ul>
+    </details>
     <div class="btns">
       <a class="btn primary" href="https://script.google.com/macros/s/AKfycbx-mmyEf1rtA-M54T36AMg78COqTbS9MLJiTC5wnproz0aiViQ5ImlSxhsqeuNOPQ7e/exec" target="_blank">開く (公開版)</a>
       <a class="btn" href="https://script.google.com/d/14jVht1XCmqXXYRtwOjrneuEa3-sMojQ2wXUNeuravlwntZH6A8vUGbAd/edit" target="_blank">GASエディタ</a>
@@ -79,14 +94,17 @@
   <div class="card">
     <h2>NGS 武器どっち？</h2>
     <div class="game"><span class="badge b-ngs">NGS</span><span class="badge b-live">公開中 (v2610b)</span></div>
-    <p>NGSの武器を<b>ざっくり威力比較</b>するツール。威力＝攻撃力 × 潜在能力Lv倍率 × プリセット倍率で計算します。</p>
-    <ul>
-      <li>武器シリーズを選ぶと 強化値+100 の攻撃力と潜在能力を自動セット</li>
-      <li>潜在Lv1〜6・プリセット能力（wikiの条件込み実効威力%）に対応</li>
-      <li>1行目の武器を基準にした%差分を強い順にランキング表示</li>
-      <li>シリーズ選択で攻撃力が自動入力・行追加で比較したいだけ並べられる（データ内蔵・単一HTML）</li>
-      <li>参照: NGS攻略wiki（武器・防具/シリーズ、潜在能力、プリセット能力 / 2026/10/22取得）</li>
-    </ul>
+    <details class="desc" id="d-weapon">
+      <summary>詳細</summary>
+      <p>NGSの武器を<b>ざっくり威力比較</b>するツール。威力＝攻撃力 × 潜在能力Lv倍率 × プリセット倍率で計算します。</p>
+      <ul>
+        <li>武器シリーズを選ぶと 強化値+100 の攻撃力と潜在能力を自動セット</li>
+        <li>潜在Lv1〜6・プリセット能力（wikiの条件込み実効威力%）に対応</li>
+        <li>1行目の武器を基準にした%差分を強い順にランキング表示</li>
+        <li>シリーズ選択で攻撃力が自動入力・行追加で比較したいだけ並べられる（データ内蔵・単一HTML）</li>
+        <li>参照: NGS攻略wiki（武器・防具/シリーズ、潜在能力、プリセット能力 / 2026/10/22取得）</li>
+      </ul>
+    </details>
     <div class="btns">
       <a class="btn primary" href="https://u2magu.github.io/NGS-weapon-which/" target="_blank">開く (公開版)</a>
       <a class="btn gh" href="https://github.com/u2magu/NGS-weapon-which" target="_blank">GitHub</a>
@@ -97,15 +115,18 @@
   <div class="card">
     <h2>pso2 暗影日程</h2>
     <div class="game"><span class="badge b-psp2">旧PSO2</span><span class="badge b-live">公開中 (GAS)</span></div>
-    <p>旧PSO2の<b>特別突破訓練＋超域クエスト</b>（魔笛・魔城・混沌・暗影渦巻く壊れた世界 など）の日程をカード形式で表示する Google Apps Script 製ツール。</p>
-    <ul>
-      <li>本日の回しに「今日」バッジ＋枠ハイライト</li>
-      <li>既定は7日分表示、「📅 30日分を表示する」ボタンで長期スケジュールに切り替え</li>
-      <li>クエストを色分け表示（魔笛=赤 / 魔城=黄 / 暗影=紫）</li>
-      <li>Wiki取得なし・日付計算のみで生成（外部通信ゼロ、値が替わるのは JST 0時だけ）</li>
-      <li>カードタップで PSO2 攻略 Wiki (pso2.swiki.jp) の該当クエストページを開く</li>
-      <li>スマホ対応のダーク UI・非公式ファンツール</li>
-    </ul>
+    <details class="desc" id="d-anei">
+      <summary>詳細</summary>
+      <p>旧PSO2の<b>特別突破訓練＋超域クエスト</b>（魔笛・魔城・混沌・暗影渦巻く壊れた世界 など）の日程をカード形式で表示する Google Apps Script 製ツール。</p>
+      <ul>
+        <li>本日の回しに「今日」バッジ＋枠ハイライト</li>
+        <li>既定は7日分表示、「📅 30日分を表示する」ボタンで長期スケジュールに切り替え</li>
+        <li>クエストを色分け表示（魔笛=赤 / 魔城=黄 / 暗影=紫）</li>
+        <li>Wiki取得なし・日付計算のみで生成（外部通信ゼロ、値が替わるのは JST 0時だけ）</li>
+        <li>カードタップで PSO2 攻略 Wiki (pso2.swiki.jp) の該当クエストページを開く</li>
+        <li>スマホ対応のダーク UI・非公式ファンツール</li>
+      </ul>
+    </details>
     <div class="btns">
       <a class="btn primary" href="https://script.google.com/macros/s/AKfycbzNNyML-wcVTDqkrzSP4EvyQBnTWZgZ-a8Kyy3c5t2V-OFJysSQNcYmUIsbIv2SvYk/exec" target="_blank">開く (公開版)</a>
       <a class="btn" href="https://script.google.com/d/1VMyN4XJTJvFWwi3pq9NxPuUUqV4f6CATOHQgTRbOGfs0eet_Amaki45e/edit" target="_blank">GASエディタ</a>
@@ -116,13 +137,16 @@
   <div class="card">
     <h2>PSO2 マグ育成 計算ツール</h2>
     <div class="game"><span class="badge b-psp2">旧PSO2</span><span class="badge b-live">公開中</span></div>
-    <p>PSO2 (EP6時点) の<b>マグ育成</b>を計算するツール。「このアイテム何個で Lv200？」「何個与えるとどこまで？」がひと目でわかります。</p>
-    <ul>
-      <li>現在のマグ入力 (7ステータス＋極振りプリセット)</li>
-      <li>目標までの必要個数 / 個数からの到達Lv を逆算</li>
-      <li>複数アイテムを順番に与える「育成プラン」シミュレーション</li>
-      <li>アイテム効果の早見表、7色のテーマ</li>
-    </ul>
+    <details class="desc" id="d-mag">
+      <summary>詳細</summary>
+      <p>PSO2 (EP6時点) の<b>マグ育成</b>を計算するツール。「このアイテム何個で Lv200？」「何個与えるとどこまで？」がひと目でわかります。</p>
+      <ul>
+        <li>現在のマグ入力 (7ステータス＋極振りプリセット)</li>
+        <li>目標までの必要個数 / 個数からの到達Lv を逆算</li>
+        <li>複数アイテムを順番に与える「育成プラン」シミュレーション</li>
+        <li>アイテム効果の早見表、7色のテーマ</li>
+      </ul>
+    </details>
     <div class="btns">
       <a class="btn primary" href="https://u2magu.github.io/pso2-mag-calc/" target="_blank">開く (公開版)</a>
       <a class="btn gh" href="https://github.com/u2magu/pso2-mag-calc" target="_blank">GitHub</a>
@@ -137,5 +161,19 @@
     <span class="updated">最終更新: 2026-11-09 / pso2-ngs-tools.html（武器どっち・暗影日程を追加、ボーナスキーを除外）</span>
   </footer>
 </div>
+<script>
+(function(){
+  var KEY = 'pso2tools-desc';
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
+  document.querySelectorAll('details.desc').forEach(function (d) {
+    if (d.id && (d.id in saved)) d.open = !!saved[d.id];
+    d.addEventListener('toggle', function () {
+      saved[d.id] = d.open;
+      try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) {}
+    });
+  });
+})();
+</script>
 </body>
 </html>
