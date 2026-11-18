@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#10131f">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="NGSダッシュ">
+  <title>NGS 情報ダッシュボード</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #10131f;
+      --card: #1a1f31;
+      --card2: #20263d;
+      --text: #e8ebf5;
+      --sub: #98a0b8;
+      --accent: #4cc9f0;
+      --on: #2fd6a5;
+      --soon: #f5a623;
+      --end: #6b7280;
+      --urgent: #ff5a7a;
+      --chipline: rgba(255,255,255,.12);
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--bg); }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      overscroll-behavior: none; /* 端の余白(台紙)を見せないようにする */
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    header {
+      position: sticky; top: 0; z-index: 10;
+      background: rgba(16,19,31,.92);
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid var(--chipline);
+      padding: 10px 14px;
+      padding-top: max(10px, env(safe-area-inset-top)); /* iPhone ホーム画面アプリ時の切り欠き回避 */
+    }
+    header .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    header h1 { font-size: 17px; margin: 0; letter-spacing: .5px; }
+    header h1 span { color: var(--accent); }
+    .meta { color: var(--sub); font-size: 11px; margin-top: 2px; }
+    .btn {
+      flex-shrink: 0; display: inline-block; padding: 6px 12px; border-radius: 999px;
+      border: 1px solid var(--accent); color: var(--accent); font-size: 13px; background: transparent;
+    }
+    .btn:active { background: rgba(76,201,240,.15); }
+    main { max-width: 760px; margin: 0 auto; padding: 12px 12px 40px; }
+
+    .none { color: var(--sub); font-size: 13px; padding: 10px 2px; }
+
+    /* ===== 緊急予告 発生予定(テキスト版・最上部) ===== */
+    .emCard {
+      background: var(--card); border: 1px solid var(--chipline);
+      border-radius: 14px; padding: 12px 14px 10px; margin-bottom: 10px;
+    }
+    .emHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+    .emNow {
+      margin: 4px 0 8px; padding: 8px 10px; border-radius: 10px;
+      background: rgba(76,201,240,.08); border: 1px solid rgba(76,201,240,.35);
+      font-size: 14px; line-height: 1.55;
+    }
+    .emNow b { font-weight: 800; }
+    .emList { font-size: 14px; line-height: 1.9; margin: 0; }
+    .emList b { font-weight: 800; }
+    .lblA { color: #8fd8ff; }
+    .lblB { color: #ff9fe8; }
+    .emNote { color: var(--sub); font-size: 11px; margin-top: 6px; line-height: 1.5; }
+    .emMore {
+      display: inline-block; margin-top: 8px; padding: 3px 12px;
+      background: transparent; border: 1px solid var(--chipline); border-radius: 999px;
+      color: var(--accent); font-size: 12px; cursor: pointer; font-family: inherit;
+    }
+    .emMore:active { background: rgba(76,201,240,.12); }
+    .idx { color: var(--sub); font-size: 11px; }
+
+    /* 「今日」のハイライト */
+    .emToday { background: rgba(76,201,240,.10); border-radius: 8px; padding: 2px 8px; }
+    .todayTag { color: var(--accent); font-size: 11px; font-weight: 800; margin-left: 6px; }
+    .labNote { color: var(--sub); font-size: 12px; font-weight: 400; }
+
+    /* ===== 開閉設定 (右上 ⚙) ===== */
+    .hdrRight { display: flex; align-items: center; gap: 8px; }
+    .settingsWrap { position: relative; }
+    .settingsPanel {
+      display: none; position: absolute; right: 0; top: calc(100% + 6px);
+      min-width: 250px; z-index: 40;
+      background: var(--card2); border: 1px solid var(--chipline);
+      border-radius: 12px; padding: 10px 12px 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.4);
+    }
+    .settingsPanel.show { display: block; }
+    .setRow { display: flex; align-items: center; padding: 5px 2px; font-size: 13px; }
+    .setRow label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .setRow input { accent-color: var(--accent); width: 16px; height: 16px; margin: 0; }
+    .setRow.indent { padding-left: 16px; font-size: 12px; color: var(--sub); }
+    .setNote { color: var(--sub); font-size: 10.5px; margin-top: 6px; border-top: 1px solid var(--chipline); padding-top: 6px; line-height: 1.5; }
+
+    #emergSec > summary { border-left-color: var(--urgent); }
+    .sumLinks {
+      margin-left: auto; display: flex; align-items: center; justify-content: flex-end;
+      gap: 10px; row-gap: 2px; flex-wrap: wrap;
+    }
+    .sumLinks a { white-space: nowrap; }
+    #emergSec > summary::after { margin-left: 0; }
+
+    /* 通常セクション */
+    .section { margin: 18px 0 8px; display: flex; align-items: center; gap: 8px; }
+    .section h2 { font-size: 14px; margin: 0; display: flex; align-items: center; gap: 6px; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .dot.on { background: var(--on); box-shadow: 0 0 8px var(--on); }
+    .dot.soon { background: var(--soon); }
+    .count { color: var(--sub); font-size: 12px; }
+
+    .card {
+      display: block; background: var(--card); border: 1px solid var(--chipline);
+      border-radius: 12px; padding: 10px 12px; margin-bottom: 8px;
+    }
+    .card:active { background: var(--card2); }
+    .card .top { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap; }
+    .badge { font-size: 11px; padding: 1px 8px; border-radius: 999px; border: 1px solid currentColor; }
+    .badge.on { color: var(--on); }
+    .badge.soon { color: var(--soon); }
+    .badge.end { color: var(--end); }
+    .cat { font-size: 11px; color: var(--sub); }
+    .card .title { font-weight: 600; font-size: 15px; }
+    .card .period { color: var(--sub); font-size: 12px; margin-top: 2px; }
+    .empty { color: var(--sub); text-align: center; padding: 18px 0; font-size: 13px; }
+
+    details { margin-top: 14px; }
+    summary { cursor: pointer; color: var(--sub); font-size: 13px; padding: 6px 0; }
+    summary .n { color: var(--text); font-size: 11px; border: 1px solid var(--chipline); border-radius: 999px; padding: 0 8px; margin-left: 6px; }
+
+    /* ===== 開閉できるセクション (ニュース/電撃/開催中) ===== */
+    main details.sec { margin-top: 26px; }
+    main details.sec > summary {
+      list-style: none;
+      display: flex; align-items: center; gap: 8px;
+      font-weight: 700; font-size: 15px; color: var(--text);
+      border-left: 4px solid var(--accent);
+      padding: 4px 0 8px 10px;
+    }
+    main details.sec > summary::-webkit-details-marker { display: none; }
+    main details.sec > summary::after { content: '▾'; margin-left: auto; color: var(--sub); font-size: 12px; }
+    main details.sec[open] > summary::after { content: '▴'; }
+    #dgSec > summary { border-left-color: #ff7bac; }
+    main details.sec > summary .n { margin-left: 0; }
+
+    /* ===== 電撃NGS特集 (ニュース欄に統合) ===== */
+    .dengeki a {
+      display: flex; align-items: baseline; gap: 8px;
+      padding: 7px 10px; border-bottom: 1px solid var(--chipline);
+    }
+    .dengeki .cat { flex-shrink: 0; font-size: 11px; color: #ff7bac; white-space: nowrap; }
+    .dengeki .t { flex: 1; font-size: 13px; }
+    .dengeki .d { flex-shrink: 0; color: var(--sub); font-size: 11px; white-space: nowrap; }
+
+    .news a {
+      display: flex; align-items: baseline; gap: 8px;
+      padding: 9px 10px; border-bottom: 1px solid var(--chipline);
+    }
+    .news .cat { flex-shrink: 0; font-size: 11px; color: var(--accent); white-space: nowrap; }
+    .news .t { flex: 1; font-size: 14px; }
+    .news .d { flex-shrink: 0; color: var(--sub); font-size: 11px; white-space: nowrap; }
+    footer { text-align: center; color: var(--sub); font-size: 11px; margin-top: 30px; padding-bottom: env(safe-area-inset-bottom); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="row">
+    <div>
+      <h1>🛰 <span>NGS</span> 情報ダッシュボード</h1>
+      <div class="meta">更新: <span id="updatedAt">読み込み中…</span></div>
+    </div>
+    <div class="hdrRight">
+      <button class="btn" id="refreshBtn" type="button">🔄 更新</button>
+      <div class="settingsWrap">
+        <button class="btn" id="setBtn" type="button">⚙</button>
+        <div class="settingsPanel" id="settingsPanel">
+          <div class="setRow"><label><input type="checkbox" id="sw_emerg" checked>🚨 緊急予告 発生予定</label></div>
+          <div class="setRow indent"><label><input type="checkbox" id="sw_emergNext">⏰ 緊急は次の1回だけ表示</label></div>
+          <div class="setRow indent"><label><input type="checkbox" id="sw_emergNext2">⏰ 緊急は次の2つだけ表示</label></div>
+          <div class="setRow"><label><input type="checkbox" id="sw_news" checked>📰 最近のニュース</label></div>
+          <div class="setRow"><label><input type="checkbox" id="sw_dg" checked>⚡ 電撃オンライン NGS特集</label></div>
+          <div class="setNote">チェック=最初から開いて表示。見出しを直接開閉しても設定を記憶します(この端末ごと)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- 緊急予告の発生予定(テキスト)を最上部に表示 -->
+  <details id="emergSec" class="sec">
+    <summary>🚨 緊急予告 発生予定 <span class="sumLinks"><a class="idx" href="https://pso2.jp/players/" target="_blank" rel="noopener" onclick="event.stopPropagation()">公式サイト ↗</a><a class="idx" href="https://pso2.jp/players/schedule/" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="公式イベントスケジュール(ブースト予定)">📅 ブースト表 ↗</a></span></summary>
+    <div id="emerg"></div>
+  </details>
+
+  <details class="sec" id="newsSec">
+    <summary>📰 最近のニュース <span class="n" id="newsCount"></span></summary>
+    <div class="news" id="news"></div>
+  </details>
+
+  <details class="sec" id="dgSec">
+    <summary>⚡ 電撃オンライン NGS特集 <span class="n" id="dgCount"></span></summary>
+    <div class="dengeki" id="dengekiList"></div>
+  </details>
+
+  <details open class="sec" id="schedSec">
+    <summary id="schedSummary">🎮 イベント・キャンペーン</summary>
+    <div class="filters" id="filters">
+      <button data-f="all" class="active">すべて</button>
+      <button data-f="event">イベント</button>
+      <button data-f="campaign">キャンペーン</button>
+    </div>
+
+    <div id="sched"></div>
+  </details>
+
+  <footer>
+    データ元: <a href="https://pso2.jp/players/" target="_blank" rel="noopener">『PSO2 ニュージェネシス』公式サイト</a><br>
+    (C)SEGA / 非公式ファンツールです (株式会社セガ・電撃オンラインとは無関係)<br>
+    (60分キャッシュ / v35 静的版 — データは GAS の JSON API 経由で取得)
+  </footer>
+</main>
+
+<script>
+  // 静的版: データは GAS の JSON API (?fmt=json) から取得します
+  // (GAS 版と同じキャッシュ・深夜停止・負荷対策がそのまま効きます)
+  const API_URL = 'https://script.google.com/macros/s/AKfycbx-mmyEf1rtA-M54T36AMg78COqTbS9MLJiTC5wnproz0aiViQ5ImlSxhsqeuNOPQ7e/exec?fmt=json';
+
+  let DATA = { updated: '', events: [], news: [], dengeki: [], emergency: null, fromCache: true, night: false };
+
+  let filter = 'all';
+
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+
+  const WD = ['日','月','火','水','木','金','土'];
+
+  function fmt(d) {
+    if (!d) return '';
+    return (d.getMonth() + 1) + '/' + d.getDate() + '(' + WD[d.getDay()] + ') ' +
+      String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+
+  function hm(ms) {
+    const h = Math.floor(ms / 3600000);
+    const mnt = Math.floor((ms % 3600000) / 60000);
+    if (h >= 24) return Math.floor(h / 24) + '日' + (h % 24 ? (h % 24) + '時間' : '');
+    return (h ? h + '時間' : '') + mnt + '分';
+  }
+
+  // ===== 予告緊急クエスト (公式 #cp4 の表を再構成して最上部に表示) =====
+  function parseEmTime(t) {
+    const s = t.match(/^(\d{1,2}):(\d{2})/);
+    const e = t.match(/[～~]\s*(\d{1,2}):(\d{2})/);
+    return {
+      startH: s ? +s[1] : 0, startM: s ? +s[2] : 0,
+      endH: e ? +e[1] : null, endM: e ? +e[2] : null
+    };
+  }
+
+  function emSlot(week, dt, tm) {
+    const eh = tm.endH != null ? tm.endH : tm.startH;
+    const em = tm.endM != null ? tm.endM : tm.startM + 60; // 明記がなければ1時間枠
+    return {
+      start: new Date(week.year, dt.m - 1, dt.d, tm.startH, tm.startM),
+      end: new Date(week.year, dt.m - 1, dt.d, eh, em)
+    };
+  }
+
+  function renderEmergency() {
+    const el = document.getElementById('emerg');
+    const em = DATA.emergency;
+    if (!em || !em.weeks || !em.weeks.length) {
+      el.innerHTML = '<div class="none">⌛ 緊急予告スケジュールを取得できませんでした(「🔄 更新」をお試しください)</div>';
+      return;
+    }
+
+    const now = new Date();
+
+    // ---- 発生予定の一覧 (週ごとに区切る) ----
+    const occur = em.weeks.map(wk => {
+      const list = [];
+      wk.rows.forEach(r => {
+        if (!r.cells.some(c => c && c.trim())) return;
+        const tm = parseEmTime(r.time);
+        wk.dates.forEach((dt, i) => {
+          const lab = (r.cells[i] || '').trim();
+          if (!lab) return;
+          const slot = emSlot(wk, dt, tm);
+          list.push({ slot: slot, lab: lab });
+        });
+      });
+      list.sort((a, b) => a.slot.start - b.slot.start);
+      return list.filter(o => o.slot.end > now);
+    });
+    const flat = occur.reduce((a, b) => a.concat(b), []);
+
+    // ---- 発生中 / 次回の一文 (全体通し) ----
+    let nowNext = '';
+    const running = flat.find(o => o.slot.start <= now);
+    // A = ライブなし(その時刻に直接発生) / B = ライブあり(ライブ開始30分後に発生)
+    const labCls = l => '<b class="' + (l === 'A' ? 'lblA' : 'lblB') + '">' + esc(l) + '</b>' +
+      '<span class="labNote">' + (l === 'A' ? '(ライブなし)' : '(ライブ30分後)') + '</span>';
+    if (running) {
+      nowNext = '🔥 発生中: ' + fmt(running.slot.start) + ' ' + labCls(running.lab) + '・あと ' + hm(running.slot.end - now);
+      const nx = flat.find(o => o !== running);
+      if (nx) nowNext += '<br>次: ' + fmt(nx.slot.start) + ' ' + labCls(nx.lab) + '・あと ' + hm(nx.slot.start - now);
+    } else if (flat.length) {
+      nowNext = '⏰ 次は ' + fmt(flat[0].slot.start) + ' ' + labCls(flat[0].lab) + '・あと ' + hm(flat[0].slot.start - now);
+      if (flat[1]) nowNext += '<br>その次: ' + fmt(flat[1].slot.start) + ' ' + labCls(flat[1].lab) + '・あと ' + hm(flat[1].slot.start - now);
+    } else {
+      nowNext = '予告された発生予定はありません';
+    }
+
+    // ---- 週ごとのテキスト (今週だけ表示、翌週以降は折りたたみ) ----
+    const weekBlocks = em.weeks.map((wk, i) => {
+      const list = occur[i];
+      // 見出しは 10/21(水)〜10/27(火) 形式にまとめる
+      const f = wk.dates[0], l = wk.dates[wk.dates.length - 1];
+      const label = f.m + '/' + f.d + '(' + esc(f.w) + ')〜' + l.m + '/' + l.d + '(' + esc(l.w) + ')';
+      const byDay = {};
+      list.forEach(o => {
+        const d = o.slot.start;
+        const key = d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate();
+        if (!byDay[key]) {
+          byDay[key] = {
+            label: (d.getMonth() + 1) + '/' + d.getDate() + '(' + WD[d.getDay()] + ')',
+            today: d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate(),
+            items: []
+          };
+        }
+        byDay[key].items.push({
+          time: String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'),
+          lab: o.lab
+        });
+      });
+      const lines = Object.keys(byDay).map(k => {
+        const g = byDay[k];
+        return '<div' + (g.today ? ' class="emToday"' : '') + '>' + g.label + ' : ' + g.items.map(it =>
+          it.time + '<b class="' + (it.lab === 'A' ? 'lblA' : 'lblB') + '">' + esc(it.lab) + '</b>'
+        ).join('・') + (g.today ? '<b class="todayTag">◀ 今日</b>' : '') + '</div>';
+      }).join('');
+      if (!lines) return '';
+
+      // 今週(今日を含む週)かどうか → 今週は初期状態で開く。どの週も開閉可能
+      const inThisWeek = wk.dates.some(dt =>
+        wk.year === now.getFullYear() && dt.m === now.getMonth() + 1 && dt.d === now.getDate());
+
+      return '<details' + (inThisWeek ? ' open' : '') + '><summary>📅 ' + label + '</summary>' +
+        '<div style="padding:2px 0 6px"><div class="emList">' + lines + '</div></div></details>';
+    }).join('');
+
+    // ---- A / B の意味 ----
+    const lg = (em.legend || []).map(x =>
+      '<div>' + esc(x.label) + ' = ' + esc(x.text) + '</div>'
+    ).join('');
+
+    // 「次のN個だけ」表示モード (⚙ 開閉設定で切替、端末ごとに記憶)
+    // コンパクト時も「一覧を開く」ボタンで全日程を一時的に見られる (挙げ直ししない限り保持)
+    if (prefs && (prefs.emergNext || prefs.emergNext2)) {
+      const n = prefs.emergNext2 ? 2 : 1;
+      const shown = nowNext.split('<br>').slice(0, n).join('<br>');
+      if (!emergExpand) {
+        el.innerHTML = '<div class="emCard"><div class="emNow">' + shown + '</div>' +
+          '<button class="emMore" type="button">📅 一覧を開く</button></div>';
+        return;
+      }
+      el.innerHTML = '<div class="emCard"><div class="emNow">' + shown + '</div>' +
+        weekBlocks +
+        '<div class="emNote">' + lg + '</div>' +
+        '<button class="emMore" type="button">📅 一覧を閉じる</button></div>';
+      return;
+    }
+
+    el.innerHTML = '<div class="emCard">' +
+      '<div class="emNow">' + nowNext + '</div>' +
+      weekBlocks +
+      '<div class="emNote">' + lg + '</div>' +
+      '</div>';
+  }
+
+  // ===== 電撃オンライン NGS 特集の最新記事 (ニュース欄の下) =====
+  function renderDengeki() {
+    const el = document.getElementById('dengekiList');
+    const sec = document.getElementById('dgSec');
+    if (!el || !sec) return;
+    const items = DATA.dengeki || [];
+    if (!items.length) { sec.style.display = 'none'; el.innerHTML = ''; return; }
+    sec.style.display = '';
+    const cnt = document.getElementById('dgCount');
+    if (cnt) cnt.textContent = items.length + '件';
+    el.innerHTML = items.map(n =>
+      '<a href="' + esc(n.href) + '" target="_blank" rel="noopener">' +
+      '<span class="cat">⚡ 特集</span>' +
+      '<span class="t">' + esc(n.title) + '</span>' +
+      (n.day ? '<span class="d">' + esc(n.day) + '</span>' : '') +
+      '</a>'
+    ).join('');
+  }
+
+  function renderMain() {
+    const pass = ev => {
+      if (filter !== 'all' && ev.type !== filter) return false;
+      return true;
+    };
+
+    const badge = { on: '開催中', soon: '開始予定', end: '終了' };
+    const groups = { on: [], soon: [], end: [], scratch: [] };
+    DATA.events.forEach(ev => {
+      // 緊急も通常のイベント一覧に含める(専用カードは廃止)
+      if (ev.type === 'scratch') { groups.scratch.push(ev); return; } // スクラッチは最下部へ
+      groups[ev.status].push(ev);
+    });
+
+    const h = [];
+    let onCount = 0, soonCount = 0;
+    [['on','進行中'],['soon','開始予定']].forEach(([st, label]) => {
+      const list = groups[st].filter(pass);
+      h.push('<div class="section"><h2><span class="dot ' + st + '"></span>' + label +
+        '</h2><span class="count">' + list.length + '件</span></div>');
+      if (!list.length) h.push('<div class="empty">該当なし</div>');
+      list.forEach(ev => h.push(card(ev, badge[st])));
+      if (st === 'on') onCount = list.length;
+      if (st === 'soon') soonCount = list.length;
+    });
+    document.getElementById('sched').innerHTML = h.join('');
+
+    // 見出し(折りたたみsummary)に件数を出す
+    const schedSummary = document.getElementById('schedSummary');
+    if (schedSummary) {
+      schedSummary.innerHTML = '🎮 イベント・キャンペーン ' +
+        '<span class="n">開催中 ' + onCount + '</span><span class="n">開始予定 ' + soonCount + '</span>';
+    }
+
+    // スクラッチ・終了は折りたたみ (詳細を見たい人向け)
+    const h2 = [];
+    h2.push('<details><summary>[$] スクラッチ <span class="n">' + groups.scratch.length + '</span></summary>');
+    if (!groups.scratch.length) h2.push('<div class="empty">該当なし</div>');
+    groups.scratch.forEach(ev => h2.push(card(ev, badge[ev.status])));
+    h2.push('</details>');
+    h2.push('<details><summary>既に終了したもの <span class="n">' + groups.end.length + '</span></summary>');
+    if (!groups.end.length) h2.push('<div class="empty">該当なし</div>');
+    groups.end.forEach(ev => h2.push(card(ev, badge.end)));
+    h2.push('</details>');
+    let details = document.createElement('div');
+    details.innerHTML = h2.join('');
+    document.getElementById('sched').appendChild(details);
+
+    const news = DATA.news.map(n =>
+      '<a href="' + esc(n.href) + '" target="_blank" rel="noopener">' +
+      '<span class="cat">' + esc(n.cat) + '</span>' +
+      '<span class="t">' + esc(n.title) + '</span>' +
+      (n.datetime ? '<span class="d">' + esc(n.datetime.slice(5, 10).replace('-', '/')) + '</span>' : '') +
+      '</a>'
+    ).join('');
+    document.getElementById('news').innerHTML = news || '<div class="empty">取得できませんでした</div>';
+    const newsCount = document.getElementById('newsCount');
+    if (newsCount) newsCount.textContent = DATA.news.length + '件';
+  }
+
+  function card(ev, badge) {
+    return '<a class="card" href="' + esc(ev.href) + '" target="_blank" rel="noopener">' +
+      '<div class="top">' +
+      '<span class="badge ' + ev.status + '">' + badge + '</span>' +
+      '<span class="cat">' + esc(ev.cat) + '</span>' +
+      '</div>' +
+      '<div class="title">' + esc(ev.title) + '</div>' +
+      '<div class="period">' + esc(ev.period) + '</div>' +
+      '</a>';
+  }
+
+  document.getElementById('filters').addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    filter = b.dataset.f;
+    document.querySelectorAll('#filters button').forEach(x => x.classList.toggle('active', x === b));
+    renderMain();
+  });
+
+  const safe = f => { try { f(); } catch (e) { /* 一部が壊れても他の表示は守る */ } };
+
+  // ===== 開閉の初期状態 (端末ごとに記憶) =====
+  // emergSec=緊急予告 / newsSec=ニュース / dgSec=電撃特集 の3つを対象
+  const PREF_KEY = 'ngs_dash_prefs_v1';
+  const PREF_MAP = { emergSec: 'emerg', newsSec: 'news', dgSec: 'dg' };
+  const prefs = { emerg: true, news: true, dg: true, emergNext: false, emergNext2: false };
+  try {
+    const saved = JSON.parse(localStorage.getItem(PREF_KEY) || 'null');
+    if (saved && typeof saved === 'object') {
+      Object.keys(prefs).forEach(k => {
+        const v = saved[k];
+        if (typeof v === 'boolean') prefs[k] = v;
+      });
+    }
+  } catch (e) {}
+  const savePrefs = () => { try { localStorage.setItem(PREF_KEY, JSON.stringify(prefs)); } catch (e) {} };
+  const applyPrefs = () => {
+    Object.keys(PREF_MAP).forEach(secId => {
+      const sec = document.getElementById(secId);
+      if (!sec) return;
+      sec.open = !!prefs[PREF_MAP[secId]];
+      const sw = document.getElementById('sw_' + PREF_MAP[secId]);
+      if (sw) sw.checked = sec.open;
+    });
+    const nextSw = document.getElementById('sw_emergNext');
+    if (nextSw) nextSw.checked = !!prefs.emergNext;
+    const nextSw2 = document.getElementById('sw_emergNext2');
+    if (nextSw2) nextSw2.checked = !!prefs.emergNext2;
+  };
+  // 見出しの直接開閉も記憶する
+  Object.keys(PREF_MAP).forEach(secId => {
+    const sec = document.getElementById(secId);
+    if (!sec) return;
+    sec.addEventListener('toggle', () => {
+      if (prefs[PREF_MAP[secId]] === sec.open) return;
+      prefs[PREF_MAP[secId]] = sec.open;
+      savePrefs();
+      const sw = document.getElementById('sw_' + PREF_MAP[secId]);
+      if (sw) sw.checked = sec.open;
+    });
+  });
+  // ⚙ 設定パネルの開閉とスイッチ
+  safe(() => {    const p = document.getElementById('settingsPanel');
+    const btn = document.getElementById('setBtn');
+    if (!p || !btn) return;
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      p.classList.toggle('show');
+    });
+    document.addEventListener('click', e => {
+      if (p.classList.contains('show') && !p.contains(e.target)) p.classList.remove('show');
+    });
+    ['sw_emerg', 'sw_news', 'sw_dg', 'sw_emergNext', 'sw_emergNext2'].forEach(id => {
+      const sw = document.getElementById(id);
+      if (!sw) return;
+      sw.addEventListener('change', () => {
+        prefs[id.slice(3)] = sw.checked;
+        // 「次の1回だけ」と「次の2つだけ」は排他
+        if (id === 'sw_emergNext' && sw.checked) prefs.emergNext2 = false;
+        if (id === 'sw_emergNext2' && sw.checked) prefs.emergNext = false;
+        savePrefs();
+        applyPrefs();
+        if (id === 'sw_emergNext' || id === 'sw_emergNext2') safe(renderEmergency); // 緊急の表示モードを即時反映
+      });
+    });
+  });
+  applyPrefs();
+
+  // コンパクトモードの「📅 一覧を開く/閉じる」ボタン (設定は変更しない一時的な開閉)
+  let emergExpand = false;
+  safe(() => {
+    const wrap = document.getElementById('emerg');
+    if (!wrap) return;
+    wrap.addEventListener('click', e => {
+      const b = e.target && e.target.closest && e.target.closest('.emMore');
+      if (!b) return;
+      emergExpand = !emergExpand;
+      safe(renderEmergency);
+    });
+  });
+
+  // ===== データ取得 (GAS JSON API) =====
+  let loading = false;
+  async function loadData(refresh) {
+    if (loading) return;
+    loading = true;
+    const btn = document.getElementById('refreshBtn');
+    const upd = document.getElementById('updatedAt');
+    if (btn) { btn.textContent = '⏳ 取得中…'; btn.style.pointerEvents = 'none'; }
+    try {
+      const res = await fetch(API_URL + (refresh ? '&refresh=1' : '') + '&cb=' + Date.now());
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      DATA = await res.json();
+      if (upd) upd.textContent = DATA.updated || '不明';
+      safe(renderEmergency);
+      safe(renderMain);
+      safe(renderDengeki);
+      try {
+        const notice = html => {
+          document.querySelectorAll('.metaNotice').forEach(n => n.remove());
+          const meta = document.querySelector('header .meta');
+          if (meta) meta.insertAdjacentHTML('afterend', '<div class="meta metaNotice">' + html + '</div>');
+        };
+        // 深夜帯はキャッシュ表示であることを伝える (0時台は通常更新あり)
+        if (DATA.night) notice('🌙 深夜帯(22:00〜6:00)は公式への更新を抑えています(0時台と6:00以降は通常更新)');
+        // 強制更新がインターバルで制限されたときの注記
+        else if (DATA.throttle) notice('⏳ 強制更新は約1分間隔に制限しています。しばらく待ってからお試しください');
+        else document.querySelectorAll('.metaNotice').forEach(n => n.remove());
+      } catch (e) {}
+    } catch (err) {
+      if (upd) upd.textContent = '取得失敗';
+      const sched = document.getElementById('sched');
+      if (sched) sched.innerHTML = '<div class="empty">データの取得に失敗しました<br>🔄 更新ボタンをお試しください</div>';
+    } finally {
+      loading = false;
+      if (btn) { btn.textContent = '🔄 更新'; btn.style.pointerEvents = ''; }
+    }
+  }
+
+  safe(() => {
+    const b = document.getElementById('refreshBtn');
+    if (b) b.addEventListener('click', () => loadData(true));
+  });
+
+  loadData(false);
+
+  // 発生中/次回表示は30秒ごとに更新
+  setInterval(() => { try { renderEmergency(); } catch (e) {} }, 30000);
+</script>
+</body>
+</html>

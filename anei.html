@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>pso2暗影日程</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 20px 15px;
+      max-width: 500px;
+      margin: 0 auto;
+      background-color: #121212;
+      color: #e0e0e0;
+    }
+    h1 { text-align: center; font-size: 1.4rem; color: #ffffff; margin-bottom: 20px; }
+    .card {
+      background: #1e1e1e; padding: 14px 16px; margin-bottom: 10px; border-radius: 10px;
+      border: 1px solid #2d2d2d; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      display: flex; justify-content: space-between; align-items: center;
+      cursor: pointer; transition: transform 0.1s ease, background-color 0.2s ease;
+    }
+    .card:active { transform: scale(0.98); background: #282828; }
+    .today { background: #1a2733; border: 2px solid #2196f3; font-weight: bold; }
+    .mteki { border-left: 5px solid #ff5252; } .mteki .pattern { color: #ff5252; font-weight: bold; }
+    .makyo { border-left: 5px solid #ffd600; } .makyo .pattern { color: #ffd600; font-weight: bold; }
+    .anei  { border-left: 5px solid #e040fb; } .anei  .pattern { color: #e040fb; font-weight: bold; }
+    .date { font-size: 0.95rem; color: #aaaaaa; }
+    .pattern { font-size: 1.05rem; color: #ffffff; font-weight: 600; }
+    .badge { background: #2196f3; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 6px; }
+    .btn-container { text-align: center; margin-top: 20px; margin-bottom: 15px; }
+    .toggle-btn {
+      background: #252525; color: #64b5f6; border: 1px solid #334455; padding: 12px 24px;
+      border-radius: 20px; font-size: 0.95rem; font-weight: bold; cursor: pointer; transition: all 0.2s;
+    }
+    .toggle-btn:active { background: #333333; }
+    footer { text-align: center; font-size: 0.8rem; color: #777777; margin-top: 25px; padding-bottom: 20px; }
+    footer a { color: #888888; text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>📅 pso2暗影日程</h1>
+  <div id="list"></div>
+  <div class="btn-container">
+    <button class="toggle-btn" id="toggle-btn" onclick="toggleDisplay()">📅 30日分を表示する</button>
+  </div>
+
+  <footer>
+    出典：<a href="https://pso2.swiki.jp/" target="_blank" rel="noopener noreferrer">PSO2 攻略 Wiki</a><br>
+    非公式ファンツール / 静的版 (GAS版と同じ11日周期の計算)
+  </footer>
+
+  <script>
+    var allSchedules = [];
+    var isFullShow = false;
+
+    var wikiUrls = {
+      "特別突破訓練:episode1": "https://pso2.swiki.jp/index.php?%E7%89%B9%E5%88%A5%E7%AA%81%E7%A0%B4%E8%A8%93%E7%B7%B4%EF%BC%9AEpisode1",
+      "安寧を破りし超急の魔笛": "https://pso2.swiki.jp/index.php?%E5%AE%89%E5%AF%A7%E3%82%92%E7%A0%B4%E3%82%8A%E3%81%97%E8%B6%85%E6%80%A5%E3%81%AE%E9%AD%94%E7%AC%9B",
+      "特別突破訓練:episode2": "https://pso2.swiki.jp/index.php?%E7%89%B9%E5%88%A5%E7%AA%81%E7%A0%B4%E8%A8%93%E7%B7%B4%EF%BC%9AEpisode2",
+      "戦塵を招く魔城の脅威": "https://pso2.swiki.jp/index.php?%E6%88%A6%E5%A1%B5%E3%82%92%E6%8B%9B%E3%81%8F%E9%AD%94%E5%9F%8E%E3%81%AE%E8%84%85%E5%A8%81",
+      "特別突破訓練:episode3": "https://pso2.swiki.jp/index.php?%E7%89%B9%E5%88%A5%E7%AA%81%E7%A0%B4%E8%A8%93%E7%B7%B4%EF%BC%9AEpisode3",
+      "静寂に生まれし混沌": "https://pso2.swiki.jp/index.php?%E9%9D%99%E5%AF%82%E3%81%AB%E7%94%9F%E3%81%BE%E3%82%8C%E3%81%97%E6%B7%B7%E6%B2%8C",
+      "特別突破訓練:episode4": "https://pso2.swiki.jp/index.php?%E7%89%B9%E5%88%A5%E7%AA%81%E7%A0%B4%E8%A8%93%E7%B7%B4%EF%BC%9AEpisode4",
+      "暗影渦巻く壊れた世界": "https://pso2.swiki.jp/index.php?%E6%9A%97%E5%BD%B1%E6%B8%A6%E5%B7%BB%E3%81%8F%E5%A3%8A%E3%82%8C%E3%81%9F%E4%B8%96%E7%95%8C",
+      "クエストお休み": "",
+      "平穏を切り裂く混沌": "https://pso2.swiki.jp/index.php?%E5%B9%B3%E7%A9%8F%E3%82%92%E5%BC%95%E3%81%8D%E8%A3%82%E3%81%8F%E6%B7%B7%E6%B2%8C",
+      "特別突破訓練:episode6": "https://pso2.swiki.jp/index.php?%E7%89%B9%E5%88%A5%E7%AA%81%E7%A0%B4%E8%A8%93%E7%B7%B4%EF%BC%9AEpisode6"
+    };
+
+    function openWiki(url) {
+      if (!url) return;
+      var a = document.createElement('a');
+      a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+
+    // GAS版 getSchedules() と同じ計算をブラウザ側で実行 (外部通信ゼロ)
+    function getSchedules() {
+      var patterns = [
+        "特別突破訓練:episode1", "安寧を破りし超急の魔笛",
+        "特別突破訓練:episode2", "戦塵を招く魔城の脅威",
+        "特別突破訓練:episode3", "静寂に生まれし混沌",
+        "特別突破訓練:episode4", "暗影渦巻く壊れた世界",
+        "クエストお休み", "平穏を切り裂く混沌", "特別突破訓練:episode6"
+      ];
+      var baseDate = new Date(2026, 8, 27); // 基準日 (GAS版と同一)
+      var today = new Date();
+      var results = [];
+      for (var i = 0; i < 30; i++) {
+        var targetDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+        var diffTime = targetDate.getTime() - baseDate.getTime();
+        var diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        var index = ((diffDays % 11) + 11) % 11;
+        results.push({
+          date: targetDate.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' }),
+          pattern: patterns[index],
+          isToday: i === 0
+        });
+      }
+      return results;
+    }
+
+    function renderSchedules() {
+      var container = document.getElementById('list');
+      container.innerHTML = '';
+      var displayData = isFullShow ? allSchedules : allSchedules.slice(0, 7);
+      displayData.forEach(function (item) {
+        var div = document.createElement('div');
+        var colorClass = '';
+        if (item.pattern === "安寧を破りし超急の魔笛") colorClass = ' mteki';
+        else if (item.pattern === "戦塵を招く魔城の脅威") colorClass = ' makyo';
+        else if (item.pattern === "暗影渦巻く壊れた世界") colorClass = ' anei';
+        div.className = 'card' + (item.isToday ? ' today' : '') + colorClass;
+        var todayBadge = item.isToday ? '<span class="badge">今日</span>' : '';
+        div.innerHTML = '<span class="date">' + item.date + todayBadge + '</span>' +
+                        '<span class="pattern">' + item.pattern + '</span>';
+        var url = wikiUrls[item.pattern];
+        if (url) { div.onclick = function () { openWiki(url); }; }
+        else { div.style.cursor = 'default'; }
+        container.appendChild(div);
+      });
+      var btn = document.getElementById('toggle-btn');
+      btn.innerText = isFullShow ? "▲ 1週間表示に戻す" : "▼ 30日分を表示する";
+    }
+
+    function toggleDisplay() { isFullShow = !isFullShow; renderSchedules(); }
+
+    allSchedules = getSchedules();
+    renderSchedules();
+  </script>
+</body>
+</html>
